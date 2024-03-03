@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {useEffect, useRef } from "react";
 import axios from "axios";
 import useSpotifyAuth from "./hooks/useSpotifyAuth";
 import useAudioRecorder from "./hooks/useAudioRecorder"; // Asumimos la ubicación del hook
@@ -24,7 +24,7 @@ const App: React.FC = () => {
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ audio: true })
-      .then((stream) => {
+      .then(() => {
         console.log("Acceso al micrófono concedido");
       })
       .catch((error) => {
