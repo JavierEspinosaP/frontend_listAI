@@ -8,7 +8,7 @@ import axios from "axios";
 // const REDIRECT_URI: string = config.REDIRECT_URI;
 
 const CLIENT_ID: string = "ec34fc61d097445891233f904b7fd961";
-const REDIRECT_URI: string = "http://localhost:5173";
+const REDIRECT_URI: string = "https://list-ai.netlify.app";
 
 const useSpotifyAuth = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
