@@ -1,104 +1,120 @@
-import React, {useEffect, useRef } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useRef } from "react";
 import useSpotifyAuth from "./hooks/useSpotifyAuth";
-import useAudioRecorder from "./hooks/useAudioRecorder"; // Asumimos la ubicación del hook
+import useAudioRecorder from "./hooks/useAudioRecorder";
+import "./styles/components/button.scss";
+import "./styles/pages/app.scss";
+import Button from "./components/button";
+import press from "/sounds/press.wav";
+import release from "/sounds/release.wav";
+import Counter from "./components/counter";
+import axios from 'axios';
 
 const App: React.FC = () => {
-  const { accessToken, redirectToSpotifyAuth, getAccessToken } =
-    useSpotifyAuth();
-  const { isRecording, startRecording, stopRecording, audioBlob } =
-    useAudioRecorder();
-    const audioRef = useRef<HTMLAudioElement>(null);
-
-
-  useEffect(() => {
-    if (accessToken) {
-      console.log(accessToken);
-    }
-  }, [accessToken]);
+  const { accessToken, redirectToSpotifyAuth } = useSpotifyAuth();
+  const { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob } = useAudioRecorder();
+  const [showCounter, setShowCounter] = useState<boolean>(false);
+  const [showFinalMessage, setShowFinalMessage] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false); // Nuevo estado
+  const pressSound = useRef<HTMLAudioElement>(new Audio(press));
+  const releaseSound = useRef<HTMLAudioElement>(new Audio(release));
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    getAccessToken();
-  }, []);
+    if (audioBlob && !isSending) { // Verificar si no está en curso el envío
+      const newBlobUrl = URL.createObjectURL(audioBlob);
+      setBlobUrl(newBlobUrl); // Update state with the new Blob URL
+      sendAudioToServer(audioBlob);
+      setShowFinalMessage(true);  // Ensure the final message is shown after sending the audio
 
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
-        console.log("Acceso al micrófono concedido");
-      })
-      .catch((error) => {
-        console.error("Acceso al micrófono denegado", error);
-      });
-  }, []);
-
-  const handleStartRecording = () => {
-    startRecording();
-  };
-
-  const handleStopRecording = () => {
-    stopRecording();
-  };
-
-const sendAudioToServer = async (audioBlob: Blob) => {
-  try {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'audio.webm');
-
-    const response = await axios.post('https://backend-listai.onrender.com/upload-audio', formData, {
-      headers: {
-        authorization: 'Bearer ' + accessToken
-      },
-    });
-
-    // Maneja la respuesta del servidor
-    console.log('Respuesta del servidor:', response.data);
-    // Aquí podrías actualizar el estado de tu componente con la respuesta,
-    // por ejemplo, mostrando la transcripción del audio.
-  } catch (error) {
-    console.error('Error al enviar el audio al servidor:', error);
-  }
-};
-
-
-  const playRecordedAudio = () => {
-    if (audioBlob && audioRef.current) {
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch((error) => console.error("Error playing the audio:", error));
+      setTimeout(() => {
+        setShowCounter(false);  // Hide the counter after the message has been displayed
+        setShowFinalMessage(false);  // Ensure message is hidden again
+        if (newBlobUrl) { // Check if newBlobUrl is not null before revoking
+          URL.revokeObjectURL(newBlobUrl);  // Clean up the Blob URL
+        }
+        setAudioBlob(null);
+        setBlobUrl(null);  // Reset blobUrl in state
+        setIsSending(false);  // Reset sending state
+      }, 2000);
     }
-  };
+  }, [audioBlob, setAudioBlob, isSending]);
 
-  const handleSendAudio = async () => {
-    if (audioBlob) {
-      await sendAudioToServer(audioBlob);
-    } else {
-      console.log('No hay audio para enviar');
-    }
-  };
+  const sendAudioToServer = async (audioBlob: Blob) => {
+    setIsSending(true); // Marcar que el envío está en curso
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
   
+      const response = await axios.post('https://backend-listai.onrender.com/upload-audio', formData, {
+        headers: {
+          authorization: 'Bearer ' + accessToken
+        },
+      });
+  
+      // Maneja la respuesta del servidor
+      console.log('Respuesta del servidor:', response.data);
+      // Aquí podrías actualizar el estado de tu componente con la respuesta,
+      // por ejemplo, mostrando la transcripción del audio.
+    } catch (error) {
+      console.error('Error al enviar el audio al servidor:', error);
+      setIsSending(false); // Reset sending state on error
+    }
+  };
+
+  const handlePress = () => {
+    if (!isRecording) {
+      startRecording();
+      pressSound.current.play();
+      setShowCounter(true);
+      setShowFinalMessage(false);  // Reset message visibility
+    }
+  };
+
+  const handleRelease = async () => {
+    if (isRecording) {
+      const stoppedBlob = await stopRecording();
+      releaseSound.current.play();
+      setShowFinalMessage(true);  // Show final message on release
+      if (stoppedBlob) {
+        sendAudioToServer(stoppedBlob);
+        setAudioBlob(stoppedBlob);  // Update state with the new Blob
+      }
+
+      setTimeout(() => {
+        setShowCounter(false);  // Hide the counter after the message has been displayed
+        setShowFinalMessage(false);  // Ensure message is hidden again
+      }, 2000);
+    }
+  };
+
+  const endMessageDisplay = () => {
+    setShowCounter(false);
+    setShowFinalMessage(false);  // Ensure message is hidden after timeout
+  };
 
   return (
-    <div>
-      {!accessToken && (
-        <button onClick={redirectToSpotifyAuth}>
-          Iniciar sesión con Spotify
-        </button>
-      )}
-      <div>
-        <button onClick={handleStartRecording} disabled={isRecording}>
-          Start Recording
-        </button>
-        <button onClick={handleStopRecording} disabled={!isRecording}>
-          Stop Recording
-        </button>
-        <button onClick={playRecordedAudio} disabled={!audioBlob}>
-          Play Recording
-        </button>
-        <button onClick={handleSendAudio} disabled={!audioBlob}>Send Audio to Server</button>
-        <audio ref={audioRef} controls />
+    <section className="wrapper">
+      <div className="hero"></div>
+      <div className="content">
+        {showCounter && <Counter onComplete={handleRelease} onEnd={endMessageDisplay} showFinalMessage={showFinalMessage} />}
+        <h1 className="h1--scalingSize" data-text="An awesome title">
+          BardBeat
+        </h1>
+        {!accessToken ? (
+          <button onClick={redirectToSpotifyAuth}>
+            Iniciar sesión con Spotify
+          </button>
+        ) : (
+          <Button
+            onMouseDown={handlePress}
+            onMouseUp={handleRelease}
+            onTouchStart={handlePress}
+            onTouchEnd={handleRelease}
+            className={isRecording ? "pressed" : ""}
+          />
+        )}
       </div>
-    </div>
+    </section>
   );
 };
 
