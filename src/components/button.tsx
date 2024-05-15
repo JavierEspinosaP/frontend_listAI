@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import '../styles/components/button.scss'; // Asegúrate de que tu archivo SASS esté correctamente vinculado
 
 interface ButtonProps {
