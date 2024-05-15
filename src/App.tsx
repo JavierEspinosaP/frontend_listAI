@@ -17,12 +17,12 @@ const App: React.FC = () => {
   const [isSending, setIsSending] = useState<boolean>(false); // Nuevo estado
   const pressSound = useRef<HTMLAudioElement>(new Audio(press));
   const releaseSound = useRef<HTMLAudioElement>(new Audio(release));
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  // const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (audioBlob && !isSending) { // Verificar si no está en curso el envío
       const newBlobUrl = URL.createObjectURL(audioBlob);
-      setBlobUrl(newBlobUrl); // Update state with the new Blob URL
+      // setBlobUrl(newBlobUrl); // Update state with the new Blob URL
       sendAudioToServer(audioBlob);
       setShowFinalMessage(true);  // Ensure the final message is shown after sending the audio
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
           URL.revokeObjectURL(newBlobUrl);  // Clean up the Blob URL
         }
         setAudioBlob(null);
-        setBlobUrl(null);  // Reset blobUrl in state
+        // setBlobUrl(null);  // Reset blobUrl in state
         setIsSending(false);  // Reset sending state
       }, 2000);
     }
