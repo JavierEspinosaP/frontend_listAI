@@ -1,4 +1,4 @@
-<h1 align="center"><strong>Project Name: ListAI Frontend</strong></h1>
+<h1 align="center"><strong>ListAI</strong></h1>
 
 <h2 align="center"><strong>Description</strong></h2>
 
