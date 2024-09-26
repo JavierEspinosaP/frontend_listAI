@@ -4,12 +4,12 @@ import useSpotifyAuth from "./hooks/useSpotifyAuth";
 import useAudioRecorder from "./hooks/useAudioRecorder";
 import "./styles/components/button.scss";
 import "./styles/pages/app.scss";
-import Button from "./components/Button";
+import Button from "./components/button";
 import { PermissionModal } from "./components/PermissionModal";
 import InstructionModal from "./components/InstructionModal";
 import pressSoundFile from "/sounds/press.wav";
 import releaseSoundFile from "/sounds/release.wav";
-import Counter from "./components/Counter";
+import Counter from "./components/counter";
 import axios from 'axios';
 
 // Componente para mostrar mensajes personalizados
