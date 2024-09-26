@@ -27,7 +27,7 @@ const RecordButton: React.FC<ButtonProps> = ({
       <button className="button">
         <div className="button__content">
           <div className="button__icon"></div>
-          <p className="button__text">Press to record</p>
+          <p className="button__text">Press & hold to record</p>
         </div>
       </button>
     </div>

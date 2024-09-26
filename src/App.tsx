@@ -4,10 +4,12 @@ import useSpotifyAuth from "./hooks/useSpotifyAuth";
 import useAudioRecorder from "./hooks/useAudioRecorder";
 import "./styles/components/button.scss";
 import "./styles/pages/app.scss";
-import Button from "./components/button";
+import Button from "./components/Button";
+import { PermissionModal } from "./components/PermissionModal";
+import InstructionModal from "./components/InstructionModal";
 import pressSoundFile from "/sounds/press.wav";
 import releaseSoundFile from "/sounds/release.wav";
-import Counter from "./components/counter";
+import Counter from "./components/Counter";
 import axios from 'axios';
 
 // Componente para mostrar mensajes personalizados
@@ -16,36 +18,6 @@ const Message: React.FC<{ message: string }> = ({ message }) => (
     {message}
   </div>
 );
-
-// Componente del Modal de Permisos
-const PermissionModal: React.FC<{
-  isOpen: boolean;
-  onAccept: () => void;
-  onDeny: () => void;
-}> = ({ isOpen, onAccept, onDeny }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <h2>Permiso para usar el micrófono</h2>
-        <p>
-          Necesitamos acceder a tu micrófono para recibir tu mensaje y crear la playlist personalizada.
-          <br />
-          Puedes estar tranquilo(a), tus datos y permisos se eliminarán después de usar el servicio.
-        </p>
-        <div className="modal-buttons">
-          <button onClick={onAccept} className="modal-button accept">
-            Aceptar
-          </button>
-          <button onClick={onDeny} className="modal-button deny">
-            Denegar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const App: React.FC = () => {
   const { accessToken, redirectToSpotifyAuth } = useSpotifyAuth();
@@ -58,10 +30,27 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPermissionModal, setShowPermissionModal] = useState<boolean>(false);
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState<boolean>(false);
+  
+  const [showInstructionModal, setShowInstructionModal] = useState<boolean>(true); // Nuevo estado para el modal de instrucciones
 
   const pressSound = useRef<HTMLAudioElement>(new Audio(pressSoundFile));
   const releaseSound = useRef<HTMLAudioElement>(new Audio(releaseSoundFile));
   const pressStartTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    const hasSeenInstructions = localStorage.getItem("hasSeenInstructions");
+    if (hasSeenInstructions) {
+      setShowInstructionModal(false);
+    } else {
+      setShowInstructionModal(true);
+    }
+  }, []);
+  
+  const handleCloseInstructionModal = () => {
+    setShowInstructionModal(false);
+    localStorage.setItem("hasSeenInstructions", "true");
+  };
+
 
   useEffect(() => {
     // Verificar el estado del permiso del micrófono al montar el componente
@@ -111,6 +100,13 @@ const App: React.FC = () => {
       return () => clearTimeout(timeout);
     }
   }, [audioBlob, isSending]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setErrorMessage('')
+    }, 6000);
+  }, [errorMessage])
+  
 
   const resetState = () => {
     setShowCounter(false); 
@@ -224,6 +220,7 @@ const App: React.FC = () => {
     setShowFinalMessage(false); 
   };
 
+
   return (
     <section className="wrapper">
       <div className="hero"></div>
@@ -264,6 +261,12 @@ const App: React.FC = () => {
         isOpen={showPermissionModal}
         onAccept={handleAcceptPermission}
         onDeny={handleDenyPermission}
+      />
+
+      {/* Modal de Instrucciones */}
+      <InstructionModal
+        isOpen={showInstructionModal}
+        onClose={handleCloseInstructionModal}
       />
     </section>
   );
